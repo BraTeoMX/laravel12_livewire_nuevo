@@ -27,30 +27,30 @@
     </div>
 
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-            <div class="text-sm text-zinc-500 dark:text-zinc-400">Lotes</div>
-            <div class="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{{ $totalLotes }}</div>
+        <div class="rounded-lg border border-zinc-200 bg-white p-4 ">
+            <div class="text-sm text-zinc-500 ">Lotes</div>
+            <div class="mt-2 text-2xl font-semibold text-zinc-900 ">{{ $totalLotes }}</div>
         </div>
-        <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-            <div class="text-sm text-zinc-500 dark:text-zinc-400">Aprobados</div>
+        <div class="rounded-lg border border-zinc-200 bg-white p-4 ">
+            <div class="text-sm text-zinc-500 ">Aprobados</div>
             <div class="mt-2 text-2xl font-semibold text-emerald-600">{{ $aprobados }}</div>
         </div>
-        <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-            <div class="text-sm text-zinc-500 dark:text-zinc-400">En observacion</div>
+        <div class="rounded-lg border border-zinc-200 bg-white p-4 ">
+            <div class="text-sm text-zinc-500 ">En observacion</div>
             <div class="mt-2 text-2xl font-semibold text-amber-600">{{ $observacion }}</div>
         </div>
-        <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-            <div class="text-sm text-zinc-500 dark:text-zinc-400">Rechazados</div>
+        <div class="rounded-lg border border-zinc-200 bg-white p-4 ">
+            <div class="text-sm text-zinc-500 ">Rechazados</div>
             <div class="mt-2 text-2xl font-semibold text-rose-600">{{ $rechazados }}</div>
         </div>
-        <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
-            <div class="text-sm text-zinc-500 dark:text-zinc-400">Tension promedio</div>
-            <div class="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{{ $resistenciaPromedio }} N</div>
+        <div class="rounded-lg border border-zinc-200 bg-white p-4 ">
+            <div class="text-sm text-zinc-500 ">Tension promedio</div>
+            <div class="mt-2 text-2xl font-semibold text-zinc-900 ">{{ $resistenciaPromedio }} N</div>
         </div>
     </div>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-        <section class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+        <section class="rounded-lg border border-zinc-200 bg-white p-4 ">
             <div class="mb-4 flex items-center justify-between gap-3">
                 <div>
                     <flux:heading size="lg">Lotes de tela</flux:heading>
@@ -61,7 +61,7 @@
             <livewire:lotes-tela-table />
         </section>
 
-        <section class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+        <section class="rounded-lg border border-zinc-200 bg-white p-4 ">
             <div class="mb-4">
                 <flux:heading size="lg">Indice de defectos</flux:heading>
                 <flux:subheading>Defectos acumulados por tipo de tela.</flux:subheading>
