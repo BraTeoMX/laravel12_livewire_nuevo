@@ -3,8 +3,8 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-slate-50">
-        <flux:header container class="border-b border-slate-300 bg-white">
+    <body class="min-h-screen bg-white">
+        <flux:header container class="border-b border-gray-800 bg-gray-900">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
             <a href="{{ route('dashboard') }}" class="ml-2 mr-5 flex items-center space-x-2 lg:ml-0" wire:navigate>
@@ -23,24 +23,6 @@
                 <flux:tooltip content="Search" position="bottom">
                     <flux:navbar.item class="!h-10 [&>div>svg]:size-5" icon="magnifying-glass" href="#" label="Search" />
                 </flux:tooltip>
-                <flux:tooltip content="Repository" position="bottom">
-                    <flux:navbar.item
-                        class="h-10 max-lg:hidden [&>div>svg]:size-5"
-                        icon="folder-git-2"
-                        href="https://github.com/laravel/livewire-starter-kit"
-                        target="_blank"
-                        label="Repository"
-                    />
-                </flux:tooltip>
-                <flux:tooltip content="Documentation" position="bottom">
-                    <flux:navbar.item
-                        class="h-10 max-lg:hidden [&>div>svg]:size-5"
-                        icon="book-open-text"
-                        href="https://laravel.com/docs/starter-kits"
-                        target="_blank"
-                        label="Documentation"
-                    />
-                </flux:tooltip>
             </flux:navbar>
 
             <flux:dropdown position="top" align="end">
@@ -55,24 +37,18 @@
                             <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                 <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
                                     <span
-                                        class="flex h-full w-full items-center justify-center rounded-lg bg-slate-200 text-slate-800 font-semibold"
+                                        class="flex h-full w-full items-center justify-center rounded-lg bg-gray-700 text-gray-100 font-semibold"
                                     >
                                         {{ auth()->user()->initials() }}
                                     </span>
                                 </span>
 
                                 <div class="grid flex-1 text-left text-sm leading-tight">
-                                    <span class="truncate font-semibold text-slate-800">{{ auth()->user()->name }}</span>
-                                    <span class="truncate text-xs text-slate-600">{{ auth()->user()->email }}</span>
+                                    <span class="truncate font-semibold text-gray-100">{{ auth()->user()->name }}</span>
+                                    <span class="truncate text-xs text-gray-300">{{ auth()->user()->email }}</span>
                                 </div>
                             </div>
                         </div>
-                    </flux:menu.radio.group>
-
-                    <flux:menu.separator />
-
-                    <flux:menu.radio.group>
-                        <flux:menu.item href="/settings/profile" icon="cog" wire:navigate>Settings</flux:menu.item>
                     </flux:menu.radio.group>
 
                     <flux:menu.separator />
@@ -87,7 +63,7 @@
             </flux:dropdown>
         </flux:header>
 
-        <flux:sidebar stashable sticky class="lg:hidden border-r border-slate-300 bg-white">
+        <flux:sidebar stashable sticky class="lg:hidden border-r border-gray-800 bg-gray-900">
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
             <a href="{{ route('dashboard') }}" class="ml-1 flex items-center space-x-2" wire:navigate>
@@ -100,18 +76,12 @@
                         Dashboard
                     </flux:navlist.item>
                 </flux:navlist.group>
-            </flux:navlist>
 
-            <flux:spacer />
-
-            <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    Repository
-                </flux:navlist.item>
-
-                <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits" target="_blank">
-                    Documentation
-                </flux:navlist.item>
+                <flux:navlist.group heading="Administrador" class="mt-4">
+                    <flux:navlist.item icon="users" href="{{ route('users.index') }}" :current="request()->routeIs('users.*')" wire:navigate>
+                        Usuarios
+                    </flux:navlist.item>
+                </flux:navlist.group>
             </flux:navlist>
         </flux:sidebar>
 
