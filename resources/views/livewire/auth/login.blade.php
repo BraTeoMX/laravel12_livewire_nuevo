@@ -94,11 +94,6 @@ new #[Layout('components.layouts.auth')] class extends Component {
                 placeholder="Contraseña"
             />
 
-            @if (Route::has('password.request'))
-                <x-text-link class="absolute right-0 top-0" href="{{ route('password.request') }}">
-                    ¿Olvidaste tu contraseña?
-                </x-text-link>
-            @endif
         </div>
 
         <!-- Remember Me -->
