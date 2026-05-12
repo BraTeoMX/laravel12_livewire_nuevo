@@ -77,9 +77,26 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
 
-                <flux:navlist.group heading="Administrador" class="mt-4">
+                @can('manage-users')
+                <flux:navlist.group heading="Administrador" :expanded="request()->routeIs('users.*') || request()->routeIs('catalogo-roles.*')" expandable>
                     <flux:navlist.item icon="users" href="{{ route('users.index') }}" :current="request()->routeIs('users.*')" wire:navigate>
-                        Usuarios
+                        Adm. Usuarios
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="shield-check" href="{{ route('catalogo-roles.index') }}" :current="request()->routeIs('catalogo-roles.*')" wire:navigate>
+                        Roles
+                    </flux:navlist.item>
+                </flux:navlist.group>
+                @endcan
+
+                <flux:navlist.group heading="Reportes" expandable>
+                    <flux:navlist.item icon="document-chart-bar" href="#" wire:navigate>
+                        Reporte General
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group heading="Auditorías" expandable>
+                    <flux:navlist.item icon="shield-exclamation" href="#" wire:navigate>
+                        Log de Actividades
                     </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
