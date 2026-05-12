@@ -25,6 +25,12 @@ new #[Layout('components.layouts.app')] class extends Component {
     public string $password_confirmation = '';
     public string $role_id               = '';
 
+    // ─── Flags de Control de Email ────────────────────────────────────────────
+    /** Creación: genera el email automáticamente con la regla {num_empleado}@lab.com */
+    public bool $autoGenerateEmail = false;
+    /** Edición: permite desbloquear el campo de email para modificarlo */
+    public bool $allowEditEmail    = false;
+
     // ─── Ciclo de Vida del Modal ───────────────────────────────────────────────
 
     /**
@@ -64,6 +70,8 @@ new #[Layout('components.layouts.app')] class extends Component {
             'role_id',
             'editMode',
             'editUserId',
+            'autoGenerateEmail',
+            'allowEditEmail',
         ]);
         $this->resetErrorBag();
         $this->resetValidation();
@@ -91,6 +99,9 @@ new #[Layout('components.layouts.app')] class extends Component {
         $this->password              = '';
         $this->password_confirmation = '';
 
+        // El email comienza bloqueado por seguridad; el usuario debe habilitarlo
+        $this->allowEditEmail = false;
+
         $this->editMode  = true;
         $this->showModal = true;
     }
@@ -102,14 +113,31 @@ new #[Layout('components.layouts.app')] class extends Component {
         // Normalizar el nombre a mayúsculas antes de validar y persistir
         $this->name = strtoupper(trim($this->name));
 
+        // ── Autogeneración de email (solo en modo Creación) ────────────────────
+        if (! $this->editMode && $this->autoGenerateEmail) {
+            // Regla: {numero_empleado}@lab.com — se garantiza unicidad por employee_number
+            $this->email = strtolower($this->employee_number) . '@lab.com';
+        }
+
         $rules = [
             'name'            => ['required', 'string', 'max:255'],
-            'email'           => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class . ',email,' . ($this->editUserId ?? 'null')],
             'employee_number' => ['required', 'integer', 'unique:' . User::class . ',employee_number,' . ($this->editUserId ?? 'null')],
             'role_id'         => ['required', 'integer', 'exists:catalogo_roles,id'],
         ];
 
-        // La contraseña es OBLIGATORIA en creación y OPCIONAL en edición
+        // ── Validación de email según contexto ────────────────────────────────
+        if (! $this->editMode && $this->autoGenerateEmail) {
+            // Email autogenerado: se valida como cadena única, sin intervención del usuario
+            $rules['email'] = ['required', 'string', 'email', 'max:255', 'unique:' . User::class . ',email'];
+        } elseif ($this->editMode && ! $this->allowEditEmail) {
+            // Edición con email bloqueado: no se valida ni se modifica
+            $rules['email'] = ['sometimes'];
+        } else {
+            // Creación manual o edición desbloqueada: validación completa
+            $rules['email'] = ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class . ',email,' . ($this->editUserId ?? 'null')];
+        }
+
+        // ── Validación de contraseña según contexto ───────────────────────────
         if (! $this->editMode) {
             $rules['password'] = ['required', 'string', 'confirmed', Rules\Password::defaults()];
         } else {
@@ -133,6 +161,16 @@ new #[Layout('components.layouts.app')] class extends Component {
         ]);
 
         $dataToStore = $validated;
+
+        // Asegurar que el email autogenerado se incluya en los datos a guardar
+        if (! $this->editMode && $this->autoGenerateEmail) {
+            $dataToStore['email'] = $this->email;
+        }
+
+        // En edición con email bloqueado, excluir el email de la actualización
+        if ($this->editMode && ! $this->allowEditEmail) {
+            unset($dataToStore['email']);
+        }
 
         // Solo hashear si se proporcionó contraseña (relevante en edición)
         if (! empty($validated['password'])) {
@@ -313,21 +351,95 @@ new #[Layout('components.layouts.app')] class extends Component {
                     @enderror
                 </div>
 
-                {{-- Correo Electrónico --}}
-                <div class="grid gap-2">
-                    <flux:input
-                        wire:model="email"
-                        id="email"
-                        label="Correo electrónico"
-                        type="email"
-                        required
-                        autocomplete="email"
-                        placeholder="correo@ejemplo.com"
-                    />
-                    @error('email')
-                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                {{--
+                    ─── Campo de Correo Electrónico (lógica desacoplada por contexto) ─────
+                    CREACIÓN : Campo editable por defecto. Checkbox "Autogenerar" lo
+                               deshabilita y genera {num_empleado}@lab.com al guardar.
+                    EDICIÓN  : Campo deshabilitado por defecto por seguridad. Checkbox
+                               "Permitir edición" lo habilita para cambios manuales.
+
+                    FIX: Se eliminó el conflicto x-model + wire:model en los checkboxes.
+                    La reactividad del input se maneja 100% con Alpine (@entangle + x-bind:disabled).
+                    El checkbox usa SOLO wire:model.live para sincronizar con Livewire.
+                --}}
+                @if (! $editMode)
+                    {{-- ── Modo CREACIÓN: email manual o autogenerado ─────────────────── --}}
+                    <div
+                        x-data="{ auto: $wire.entangle('autoGenerateEmail') }"
+                        class="grid gap-2"
+                    >
+                        {{-- Checkbox: SOLO wire:model.live (sin x-model para evitar conflicto) --}}
+                        <div class="flex items-center gap-3 mb-1">
+                            <input
+                                type="checkbox"
+                                id="auto_generate_email"
+                                wire:model.live="autoGenerateEmail"
+                                class="rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            >
+                            <label for="auto_generate_email" class="text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
+                                Autogenerar correo
+                                <span class="text-xs text-zinc-400 font-normal ml-1">(se usará {núm. empleado}@lab.com)</span>
+                            </label>
+                        </div>
+
+                        {{-- Input: x-bind:disabled reacciona al estado Alpine "auto" en tiempo real --}}
+                        <div x-bind:class="auto ? 'opacity-50' : ''">
+                            <flux:input
+                                wire:model="email"
+                                id="email_create"
+                                label="Correo electrónico"
+                                type="email"
+                                autocomplete="email"
+                                placeholder="correo@ejemplo.com"
+                                x-bind:disabled="auto"
+                            />
+                        </div>
+                        <p x-show="auto" class="text-xs text-zinc-500 dark:text-zinc-400 -mt-1">
+                            ✨ Se generará automáticamente al guardar: <strong>{{ $employee_number ?: '{núm. empleado}' }}@lab.com</strong>
+                        </p>
+                        @error('email')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                @else
+                    {{-- ── Modo EDICIÓN: email bloqueado por defecto ──────────────────── --}}
+                    <div
+                        x-data="{ canEdit: $wire.entangle('allowEditEmail') }"
+                        class="grid gap-2"
+                    >
+                        {{-- Checkbox: SOLO wire:model.live (sin x-model para evitar conflicto) --}}
+                        <div class="flex items-center gap-3 mb-1">
+                            <input
+                                type="checkbox"
+                                id="allow_edit_email"
+                                wire:model.live="allowEditEmail"
+                                class="rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            >
+                            <label for="allow_edit_email" class="text-sm font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer select-none">
+                                Permitir edición del correo
+                            </label>
+                        </div>
+
+                        {{-- Input: x-bind:disabled reacciona al estado Alpine "canEdit" en tiempo real --}}
+                        <div x-bind:class="! canEdit ? 'opacity-60' : ''">
+                            <flux:input
+                                wire:model="email"
+                                id="email_edit"
+                                label="Correo electrónico"
+                                type="email"
+                                autocomplete="email"
+                                placeholder="correo@ejemplo.com"
+                                x-bind:disabled="! canEdit"
+                            />
+                        </div>
+                        <p x-show="! canEdit" class="text-xs text-zinc-400 dark:text-zinc-500 -mt-1">
+                            🔒 El correo está protegido. Marque la casilla para modificarlo.
+                        </p>
+                        @error('email')
+                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                @endif
 
                 {{--
                     ─── Campo de Contraseña (lógica desacoplada por contexto) ───────────
