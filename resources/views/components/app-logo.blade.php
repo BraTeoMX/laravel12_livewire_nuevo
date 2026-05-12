@@ -2,5 +2,5 @@
     <x-app-logo-icon class="size-5 fill-current text-white " />
 </div>
 <div class="ml-1 grid flex-1 text-left text-sm">
-    <span class="mb-0.5 truncate leading-none font-semibold text-gray-100">Laboratorio Intimak</span>
+    <span class="mb-0.5 truncate leading-none font-semibold text-gray-100">Laboratorio Intimark</span>
 </div>

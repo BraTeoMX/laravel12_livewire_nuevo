@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laboratorio Intimak'),
+    'name' => env('APP_NAME', 'Laboratorio Intimark'),
 
     /*
     |--------------------------------------------------------------------------
