@@ -4,7 +4,7 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white">
-        <flux:header container class="border-b border-gray-800 bg-gray-900">
+        <flux:header container class="border-b border-indigo-800 bg-indigo-900">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
             <a href="{{ route('dashboard') }}" class="ml-2 mr-5 flex items-center space-x-2 lg:ml-0" wire:navigate>

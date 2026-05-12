@@ -2,15 +2,31 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
+        <style>
+            /* Sidebar oscuro: texto claro en ítems NO activos */
+            #sidebar-nav a:not([aria-current]) {
+                color: rgb(203 213 225); /* slate-300 */
+                transition: color 0.15s ease;
+            }
+            #sidebar-nav a:not([aria-current]):hover {
+                color: rgb(248 250 252); /* slate-50 */
+            }
+            /* Headings de grupo (Platform, Administrador, etc.) */
+            #sidebar-nav [class*="group"] > span,
+            #sidebar-nav [class*="heading"] {
+                color: rgb(148 163 184); /* slate-400 */
+            }
+        </style>
     </head>
     <body class="min-h-screen bg-white">
-        <flux:sidebar sticky stashable class="border-r border-gray-800 bg-gray-900">
+        <flux:sidebar sticky stashable class="border-r border-slate-700 bg-slate-800">
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
             <a href="{{ route('dashboard') }}" class="mr-5 flex items-center space-x-2" wire:navigate>
                 <x-app-logo class="size-8" href="#"></x-app-logo>
             </a>
 
+            <div id="sidebar-nav">
             <flux:navlist variant="outline">
                 <flux:navlist.group heading="Platform" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>Dashboard</flux:navlist.item>
@@ -33,6 +49,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
+            </div>
 
             <flux:spacer />
 
