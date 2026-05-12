@@ -73,10 +73,11 @@
                     labels: @js($chartLabels),
                     series: @js($chartSeries)
                 })"
-                x-init="render()"
                 class="min-h-[360px]"
             >
-                <div x-ref="chart" class="h-[360px]"></div>
+                <div x-ref="chartContainer" class="h-[360px]">
+                    <div x-ref="chart" class="h-[360px]"></div>
+                </div>
             </div>
         </section>
     </div>
@@ -94,46 +95,77 @@
         </div>
     </flux:modal>
 
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('laboratorioDefectosChart', (config) => ({
-                chart: null,
-                render() {
-                    const options = {
-                        chart: {
-                            type: 'bar',
-                            height: 360,
-                            toolbar: { show: false },
-                            fontFamily: 'Instrument Sans, ui-sans-serif, system-ui',
-                        },
-                        series: [{
-                            name: 'Defectos',
-                            data: config.series,
-                        }],
-                        xaxis: {
-                            categories: config.labels,
-                            labels: { rotate: -35, trim: true },
-                        },
+     <script>
+        // Registrar componente UNA SOLA VEZ, antes de que Alpine escanee el DOM
+        if (!window.laboratorioDefectosChartRegistered) {
+            document.addEventListener('alpine:initializing', () => {
+                Alpine.data('laboratorioDefectosChart', (config) => ({
+                    chart: null,
+                    container: null,
+                    chartConfig: config,
+
+                    init() {
+                        this.waitForDom(() => {
+                            this.setupMutationObserver();
+                            this.renderChart();
+                        });
+                    },
+
+                renderChart() {
+                    if (!this.$refs.chart) {
+                        console.warn('laboratorioDefectosChart: Contenedor no encontrado');
+                        return;
+                    }
+
+                    // Esperar a que ApexCharts esté disponible (condición de carrera con módulos Vite)
+                    if (typeof window.ApexCharts !== 'function') {
+                        setTimeout(() => this.renderChart(), 50);
+                        return;
+                    }
+
+                    if (this.chart) this.chart.destroy();
+
+                    this.chart = new window.ApexCharts(this.$refs.chart, {
+                        chart: { type: 'bar', height: 360, toolbar: { show: false }, fontFamily: 'Instrument Sans, ui-sans-serif, system-ui' },
+                        series: [{ name: 'Defectos', data: this.chartConfig.series }],
+                        xaxis: { categories: this.chartConfig.labels, labels: { rotate: -35, trim: true } },
                         colors: ['#0f766e'],
-                        plotOptions: {
-                            bar: {
-                                borderRadius: 5,
-                                columnWidth: '52%',
-                            },
-                        },
+                        plotOptions: { bar: { borderRadius: 5, columnWidth: '52%' } },
                         dataLabels: { enabled: false },
                         grid: { borderColor: '#e5e7eb' },
-                        tooltip: {
-                            y: {
-                                formatter: (value) => `${value} defectos`,
-                            },
-                        },
-                    };
+                        tooltip: { y: { formatter: (value) => `${value} defectos` } },
+                    });
 
-                    this.chart = new window.ApexCharts(this.$refs.chart, options);
                     this.chart.render();
                 },
-            }));
-        });
+
+                    waitForDom(cb) {
+                        if (typeof this.$nextTick === 'function') {
+                            this.$nextTick(cb);
+                        } else {
+                            setTimeout(cb, 50);
+                        }
+                    },
+
+                    setupMutationObserver() {
+                        this.container = this.$refs.chartContainer;
+                        if (this.container && typeof MutationObserver !== 'undefined') {
+                            this.observer = new MutationObserver(() => {
+                                setTimeout(() => this.renderChart(), 100);
+                            });
+                            this.observer.observe(this.container, {
+                                childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style']
+                            });
+                        }
+                    },
+
+                    destroy() {
+                        if (this.chart) { this.chart.destroy(); this.chart = null; }
+                        if (this.observer) { this.observer.disconnect(); this.observer = null; }
+                    },
+                }));
+            });
+            window.laboratorioDefectosChartRegistered = true;
+        }
     </script>
 </div>
