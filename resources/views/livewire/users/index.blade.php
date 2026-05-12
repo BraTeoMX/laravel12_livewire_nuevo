@@ -182,11 +182,11 @@ new #[Layout('components.layouts.app')] class extends Component {
         if ($this->editMode && $this->editUserId) {
             $user = User::findOrFail($this->editUserId);
             $user->update($dataToStore);
-            session()->flash('status', 'Usuario actualizado correctamente.');
+            $this->dispatch('notify', type: 'success', message: 'Usuario actualizado correctamente.');
         } else {
             $user = User::create($dataToStore);
             event(new Registered($user));
-            session()->flash('status', 'Usuario creado correctamente.');
+            $this->dispatch('notify', type: 'success', message: 'Usuario creado correctamente.');
         }
 
         $this->closeModal();
@@ -209,6 +209,9 @@ new #[Layout('components.layouts.app')] class extends Component {
         $user = User::findOrFail($userId);
         $user->estatus = ! $user->estatus;
         $user->save();
+        
+        $estado = $user->estatus ? 'activado' : 'desactivado';
+        $this->dispatch('notify', type: 'success', message: "El usuario ha sido {$estado}.");
     }
 }; ?>
 
@@ -230,16 +233,6 @@ new #[Layout('components.layouts.app')] class extends Component {
         </flux:button>
     </div>
 
-    {{-- ─── Notificación de Éxito ──────────────────────────────────────────── --}}
-    @if (session('status'))
-        <div class="rounded-md bg-green-50 p-4 border border-green-200 dark:bg-green-900/20 dark:border-green-900/50">
-            <div class="flex">
-                <div class="ml-3">
-                    <p class="text-sm font-medium text-green-800 dark:text-green-400">{{ session('status') }}</p>
-                </div>
-            </div>
-        </div>
-    @endif
 
     {{-- ─── Tabla de Usuarios ───────────────────────────────────────────────── --}}
     <div class="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
@@ -282,7 +275,8 @@ new #[Layout('components.layouts.app')] class extends Component {
                                     Editar
                                 </flux:button>
                                 <button
-                                    wire:click="toggleEstatus({{ $user->id }})"
+                                    x-data
+                                    @click="$dispatch('open-confirm', { method: 'toggleEstatus', params: {{ $user->id }} })"
                                     class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-medium transition-colors
                                         {{ $user->estatus
                                             ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400'
@@ -565,4 +559,5 @@ new #[Layout('components.layouts.app')] class extends Component {
         </div>
     </flux:modal>
 
+    <x-confirm-action />
 </div>
