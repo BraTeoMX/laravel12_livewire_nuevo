@@ -18,7 +18,7 @@ new #[Layout('components.layouts.app')] class extends Component {
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
-    public ?int $role_id = null;
+    public string $role_id = '';
 
     public function save(): void
     {
@@ -27,6 +27,9 @@ new #[Layout('components.layouts.app')] class extends Component {
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
             'role_id' => ['required', 'integer', 'exists:catalogo_roles,id'],
+        ], [
+            'role_id.required' => 'Debe seleccionar un rol para el usuario.',
+            'role_id.exists' => 'El rol seleccionado no es válido.',
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -137,6 +140,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                         placeholder="Seleccione un rol"
                         required
                     >
+                        <flux:select.option value="">-- Seleccione un rol --</flux:select.option>
                         @foreach($roles as $role)
                             <flux:select.option value="{{ $role->id }}">
                                 {{ $role->nombre }}
