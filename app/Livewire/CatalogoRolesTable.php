@@ -23,7 +23,7 @@ final class CatalogoRolesTable extends PowerGridComponent
 
     public function datasource(): Collection
     {
-        return CatalogoRole::query();
+        return CatalogoRole::all();
     }
 
     public function setUp(): array
@@ -45,7 +45,8 @@ final class CatalogoRolesTable extends PowerGridComponent
             ->add('nombre')
             ->add('descripcion')
             ->add('created_at_formatted', fn ($entry) => $entry->created_at ? $entry->created_at->format('d/m/Y H:i') : '-')
-            ->add('updated_at_formatted', fn ($entry) => $entry->updated_at ? $entry->updated_at->format('d/m/Y H:i') : '-');
+            ->add('updated_at_formatted', fn ($entry) => $entry->updated_at ? $entry->updated_at->format('d/m/Y H:i') : '-')
+            ->add('acciones', fn ($entry): string => view('livewire.catalogo-roles.actions', ['entry' => $entry])->render());
     }
 
     public function columns(): array
@@ -67,9 +68,7 @@ final class CatalogoRolesTable extends PowerGridComponent
             Column::make('Actualizado', 'updated_at_formatted', 'updated_at')
                 ->sortable(),
 
-            Column::make('Acciones', 'id')
-                ->view('livewire.catalogo-roles.actions')
-                ->viewInline('livewire.catalogo-roles.actions-inline')
+            Column::make('Acciones', 'acciones')
                 ->sortable(false),
         ];
     }
