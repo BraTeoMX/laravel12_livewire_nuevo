@@ -99,6 +99,9 @@ new #[Layout('components.layouts.app')] class extends Component {
 
     public function save(): void
     {
+        // Normalizar el nombre a mayúsculas antes de validar y persistir
+        $this->name = strtoupper(trim($this->name));
+
         $rules = [
             'name'            => ['required', 'string', 'max:255'],
             'email'           => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class . ',email,' . ($this->editUserId ?? 'null')],
@@ -292,7 +295,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                     @enderror
                 </div>
 
-                {{-- Nombre --}}
+                {{-- Nombre (se convierte a mayúsculas en tiempo real) --}}
                 <div class="grid gap-2">
                     <flux:input
                         wire:model="name"
@@ -301,7 +304,9 @@ new #[Layout('components.layouts.app')] class extends Component {
                         type="text"
                         required
                         autocomplete="name"
-                        placeholder="Nombre completo"
+                        placeholder="NOMBRE COMPLETO"
+                        x-on:input="$event.target.value = $event.target.value.toUpperCase(); $wire.set('name', $event.target.value)"
+                        style="text-transform: uppercase"
                     />
                     @error('name')
                         <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
