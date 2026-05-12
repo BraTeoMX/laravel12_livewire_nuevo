@@ -28,6 +28,17 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         $this->ensureIsNotRateLimited();
 
+        // Verificar si el usuario existe y su estatus
+        $user = \App\Models\User::where('email', $this->email)->first();
+
+        if ($user && !$user->estatus) {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'Su cuenta está desactivada. Contacte al administrador.',
+            ]);
+        }
+
         if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             RateLimiter::hit($this->throttleKey());
 
