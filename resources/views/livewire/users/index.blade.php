@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\CatalogoRole;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -17,6 +18,7 @@ new #[Layout('components.layouts.app')] class extends Component {
     public string $email = '';
     public string $password = '';
     public string $password_confirmation = '';
+    public ?int $role_id = null;
 
     public function save(): void
     {
@@ -24,6 +26,7 @@ new #[Layout('components.layouts.app')] class extends Component {
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+            'role_id' => ['required', 'integer', 'exists:catalogo_roles,id'],
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
@@ -32,7 +35,7 @@ new #[Layout('components.layouts.app')] class extends Component {
         
         event(new Registered($user));
 
-        $this->reset(['name', 'email', 'password', 'password_confirmation', 'showModal']);
+        $this->reset(['name', 'email', 'password', 'password_confirmation', 'role_id', 'showModal']);
         
         session()->flash('status', 'Usuario creado correctamente.');
     }
@@ -40,7 +43,8 @@ new #[Layout('components.layouts.app')] class extends Component {
     public function with(): array
     {
         return [
-            'users' => User::latest()->paginate(10),
+            'users' => User::with('role')->latest()->paginate(10),
+            'roles' => CatalogoRole::orderBy('nombre')->get(),
         ];
     }
 }; ?>
@@ -65,29 +69,33 @@ new #[Layout('components.layouts.app')] class extends Component {
         </div>
     @endif
 
-    <!-- Tabla de Usuarios -->
-    <div class="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-        <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
-            <thead class="bg-zinc-50 dark:bg-zinc-900/50">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">ID</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Nombre</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Email</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Fecha de Creación</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
-                @foreach ($users as $user)
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">{{ $user->id }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100 font-medium">{{ $user->name }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{{ $user->email }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{{ $user->created_at->format('d/m/Y H:i') }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+     <!-- Tabla de Usuarios -->
+     <div class="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+         <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
+             <thead class="bg-zinc-50 dark:bg-zinc-900/50">
+                 <tr>
+                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">ID</th>
+                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Nombre</th>
+                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Email</th>
+                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Rol</th>
+                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Fecha de Creación</th>
+                 </tr>
+             </thead>
+             <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
+                 @foreach ($users as $user)
+                     <tr>
+                         <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">{{ $user->id }}</td>
+                         <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100 font-medium">{{ $user->name }}</td>
+                         <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{{ $user->email }}</td>
+                         <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                             {{ $user->role ? $user->role->nombre : '-' }}
+                         </td>
+                         <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{{ $user->created_at->format('d/m/Y H:i') }}</td>
+                     </tr>
+                 @endforeach
+             </tbody>
+         </table>
+     </div>
 
     <div class="mt-4">
         {{ $users->links() }}
@@ -119,6 +127,25 @@ new #[Layout('components.layouts.app')] class extends Component {
                 <!-- Confirm Password -->
                 <div class="grid gap-2">
                     <flux:input wire:model="password_confirmation" id="password_confirmation" label="{{ __('Confirm password') }}" type="password" required autocomplete="new-password" placeholder="Confirm password" />
+                </div>
+
+                <!-- Rol -->
+                <div class="grid gap-2">
+                    <flux:select
+                        wire:model="role_id"
+                        label="Rol del Usuario"
+                        placeholder="Seleccione un rol"
+                        required
+                    >
+                        @foreach($roles as $role)
+                            <flux:select.option value="{{ $role->id }}">
+                                {{ $role->nombre }}
+                            </flux:select.option>
+                        @endforeach
+                    </flux:select>
+                    @error('role_id')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="flex items-center justify-end gap-3 mt-4">
