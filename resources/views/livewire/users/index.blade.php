@@ -13,42 +13,91 @@ new #[Layout('components.layouts.app')] class extends Component {
     use WithPagination;
 
     public bool $showModal = false;
+    public bool $editMode = false;
+    public ?int $editUserId = null;
 
     public string $name = '';
     public string $email = '';
+    public int $employee_number = 0;
     public string $password = '';
     public string $password_confirmation = '';
     public string $role_id = '';
 
     public function save(): void
     {
-        $validated = $this->validate([
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
-            'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class . ',email,' . ($this->editUserId ?? 'null')],
+            'employee_number' => ['required', 'integer', 'unique:' . User::class . ',employee_number,' . ($this->editUserId ?? 'null')],
             'role_id' => ['required', 'integer', 'exists:catalogo_roles,id'],
-        ], [
+        ];
+
+        // Contraseña requerida solo en creación, en edición es opcional
+        if (!$this->editMode) {
+            $rules['password'] = ['required', 'string', 'confirmed', Rules\Password::defaults()];
+        } else {
+            $rules['password'] = ['sometimes', 'string', 'confirmed', Rules\Password::defaults()];
+        }
+
+        $validated = $this->validate($rules, [
             'name.required' => 'El nombre es obligatorio.',
             'name.string' => 'El nombre debe ser una cadena de texto.',
             'name.max' => 'El nombre no puede tener más de 255 caracteres.',
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico debe ser válido.',
             'email.unique' => 'Este correo electrónico ya está registrado.',
+            'employee_number.required' => 'El número de empleado es obligatorio.',
+            'employee_number.integer' => 'El número de empleado debe ser un valor numérico.',
+            'employee_number.unique' => 'Este número de empleado ya está registrado.',
             'password.required' => 'La contraseña es obligatoria.',
             'password.confirmed' => 'La confirmación de la contraseña no coincide.',
             'role_id.required' => 'Debe seleccionar un rol para el usuario.',
             'role_id.exists' => 'El rol seleccionado no es válido.',
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
+        $dataToStore = $validated;
 
-        $user = User::create($validated);
-        
-        event(new Registered($user));
+        // Solo hashear la contraseña si se proporcionó
+        if (!empty($validated['password'])) {
+            $dataToStore['password'] = Hash::make($validated['password']);
+        } else {
+            unset($dataToStore['password']);
+        }
 
-        $this->reset(['name', 'email', 'password', 'password_confirmation', 'role_id', 'showModal']);
-        
-        session()->flash('status', 'Usuario creado correctamente.');
+        if ($this->editMode && $this->editUserId) {
+            $user = User::findOrFail($this->editUserId);
+            $user->update($dataToStore);
+            session()->flash('status', 'Usuario actualizado correctamente.');
+        } else {
+            $user = User::create($dataToStore);
+            event(new Registered($user));
+            session()->flash('status', 'Usuario creado correctamente.');
+        }
+
+        $this->reset(['name', 'email', 'employee_number', 'password', 'password_confirmation', 'role_id', 'showModal', 'editMode', 'editUserId']);
+    }
+
+    public function edit(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        $this->editUserId = $user->id;
+        $this->name = $user->name;
+        $this->email = $user->email;
+        $this->employee_number = $user->employee_number;
+        $this->role_id = $user->role_id;
+        $this->editMode = true;
+        $this->showModal = true;
+
+        // Limpiar contraseñas en edición
+        $this->password = '';
+        $this->password_confirmation = '';
+    }
+
+    public function update(): void
+    {
+        // Redirige a save() para reutilizar lógica
+        $this->save();
     }
 
     public function with(): array
@@ -64,12 +113,6 @@ new #[Layout('components.layouts.app')] class extends Component {
         $user = User::findOrFail($userId);
         $user->estatus = !$user->estatus;
         $user->save();
-    }
-
-    public function edit(int $userId): void
-    {
-        // Funcionalidad de edición se implementará en futuras versiones
-        // Por ahora solo muestra un mensaje o podría abrir un modal
     }
 }; ?>
 
@@ -99,6 +142,7 @@ new #[Layout('components.layouts.app')] class extends Component {
               <thead class="bg-zinc-50 dark:bg-zinc-900/50">
                   <tr>
                       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">ID</th>
+                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Número de Empleado</th>
                       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Nombre</th>
                       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Email</th>
                       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Rol</th>
@@ -110,6 +154,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                   @foreach ($users as $user)
                       <tr>
                           <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">{{ $user->id }}</td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100 font-medium">{{ $user->employee_number }}</td>
                           <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100 font-medium">{{ $user->name }}</td>
                           <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{{ $user->email }}</td>
                           <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
@@ -152,17 +197,34 @@ new #[Layout('components.layouts.app')] class extends Component {
         {{ $users->links() }}
     </div>
 
-    <!-- Modal para crear usuario -->
+    <!-- Modal para crear/editar usuario -->
     <flux:modal wire:model="showModal" class="md:w-[480px]">
         <div class="p-6">
             <h2 class="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-6">
-                Crear Nuevo Usuario
+                {{ $editMode ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}
             </h2>
 
             <form wire:submit="save" class="flex flex-col gap-6">
+                <!-- Número de Empleado -->
+                <div class="grid gap-2">
+                    <flux:input
+                        wire:model="employee_number"
+                        id="employee_number"
+                        label="Número de Empleado"
+                        type="number"
+                        required
+                        autofocus
+                        autocomplete="off"
+                        placeholder="Ingrese número de empleado"
+                    />
+                    @error('employee_number')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Nombre -->
                 <div class="grid gap-2">
-                    <flux:input wire:model="name" id="name" label="Nombre" type="text" required autofocus autocomplete="name" placeholder="Nombre completo" />
+                    <flux:input wire:model="name" id="name" label="Nombre" type="text" required autocomplete="name" placeholder="Nombre completo" />
                 </div>
 
                 <!-- Correo Electrónico -->
@@ -172,12 +234,12 @@ new #[Layout('components.layouts.app')] class extends Component {
 
                 <!-- Contraseña -->
                 <div class="grid gap-2">
-                    <flux:input wire:model="password" id="password" label="Contraseña" type="password" required autocomplete="new-password" placeholder="Contraseña" />
+                    <flux:input wire:model="password" id="password" label="Contraseña" type="password" autocomplete="new-password" placeholder="Dejar vacío para mantener la actual" />
                 </div>
 
                 <!-- Confirmar Contraseña -->
                 <div class="grid gap-2">
-                    <flux:input wire:model="password_confirmation" id="password_confirmation" label="Confirmar contraseña" type="password" required autocomplete="new-password" placeholder="Confirmar contraseña" />
+                    <flux:input wire:model="password_confirmation" id="password_confirmation" label="Confirmar contraseña" type="password" autocomplete="new-password" placeholder="Confirme nueva contraseña" />
                 </div>
 
                 <!-- Rol -->
@@ -205,7 +267,7 @@ new #[Layout('components.layouts.app')] class extends Component {
                         Cancelar
                     </flux:button>
                     <flux:button type="submit" variant="primary">
-                        Crear cuenta
+                        {{ $editMode ? 'Actualizar' : 'Crear cuenta' }}
                     </flux:button>
                 </div>
             </form>
