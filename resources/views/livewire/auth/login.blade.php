@@ -11,7 +11,7 @@ use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
 
 new #[Layout('components.layouts.auth')] class extends Component {
-    #[Validate('required|string|email')]
+    #[Validate('required|string')]
     public string $email = '';
 
     #[Validate('required|string')]
@@ -28,8 +28,10 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         $this->ensureIsNotRateLimited();
 
+        $fieldType = filter_var($this->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'employee_number';
+
         // Verificar si el usuario existe y su estatus
-        $user = \App\Models\User::where('email', $this->email)->first();
+        $user = \App\Models\User::where($fieldType, $this->email)->first();
 
         if ($user && !$user->estatus) {
             RateLimiter::hit($this->throttleKey());
@@ -39,7 +41,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             ]);
         }
 
-        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        if (! Auth::attempt([$fieldType => $this->email, 'password' => $this->password], $this->remember)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -91,7 +93,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
     <form wire:submit="login" class="flex flex-col gap-6">
         <!-- Email Address -->
-            <flux:input wire:model="email" label="{{ __('Correo electrónico') }}" type="email" name="email" required autofocus autocomplete="email" placeholder="correo@ejemplo.com" />
+            <flux:input wire:model="email" label="{{ __('Numero de empleo o Correo electrónico') }}" type="text" name="email" required autofocus autocomplete="username" placeholder="123456 o correo@ejemplo.com" />
 
         <!-- Password -->
         <div class="relative">
