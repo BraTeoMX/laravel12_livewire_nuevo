@@ -239,7 +239,6 @@ new #[Layout('components.layouts.app')] class extends Component {
         <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
             <thead class="bg-zinc-50 dark:bg-zinc-900/50">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">ID</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Número de Empleado</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Nombre</th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider dark:text-zinc-400">Email</th>
@@ -251,7 +250,6 @@ new #[Layout('components.layouts.app')] class extends Component {
             <tbody class="divide-y divide-zinc-200 dark:divide-zinc-800">
                 @foreach ($users as $user)
                     <tr>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100">{{ $user->id }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100 font-medium">{{ $user->employee_number }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-zinc-100 font-medium">{{ $user->name }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{{ $user->email }}</td>
