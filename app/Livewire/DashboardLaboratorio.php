@@ -12,6 +12,13 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class DashboardLaboratorio extends Component
 {
+    private const FALLBACK_CHART_DATA = [
+        'Algodon peinado' => 3,
+        'Poliester deportivo' => 6,
+        'Mezclilla ligera' => 2,
+        'Rayon estampado' => 9,
+    ];
+
     public bool $mostrarModal = false;
 
     public string $mensajeModal = '';
@@ -64,6 +71,7 @@ final class DashboardLaboratorio extends Component
     public function render()
     {
         $lotes = LaboratorioTelasData::lotes();
+        $defectosPorTela = $this->defectosPorTelaParaGrafica();
 
         return view('livewire.dashboard-laboratorio', [
             'totalLotes' => $lotes->count(),
@@ -71,8 +79,27 @@ final class DashboardLaboratorio extends Component
             'observacion' => $lotes->where('estado', 'Observacion')->count(),
             'rechazados' => $lotes->where('estado', 'Rechazado')->count(),
             'resistenciaPromedio' => round($lotes->avg('resistencia_tension'), 1),
-            'chartLabels' => array_keys(LaboratorioTelasData::defectosPorTela()),
-            'chartSeries' => array_values(LaboratorioTelasData::defectosPorTela()),
+            'chartLabels' => array_keys($defectosPorTela),
+            'chartSeries' => array_values($defectosPorTela),
         ]);
+    }
+
+    /**
+     * @return array<string, int|float>
+     */
+    private function defectosPorTelaParaGrafica(): array
+    {
+        try {
+            $defectosPorTela = LaboratorioTelasData::defectosPorTela();
+        } catch (\Throwable) {
+            return self::FALLBACK_CHART_DATA;
+        }
+
+        $datosValidos = collect($defectosPorTela)
+            ->filter(fn ($defectos, $tipoTela): bool => filled($tipoTela) && is_numeric($defectos))
+            ->map(fn ($defectos): int|float => $defectos + 0)
+            ->all();
+
+        return $datosValidos !== [] ? $datosValidos : self::FALLBACK_CHART_DATA;
     }
 }

@@ -98,15 +98,41 @@
      <script>
         // Registrar componente UNA SOLA VEZ, antes de que Alpine escanee el DOM
         if (!window.laboratorioDefectosChartRegistered) {
-            document.addEventListener('alpine:initializing', () => {
-                Alpine.data('laboratorioDefectosChart', (config) => ({
+            window.laboratorioDefectosChart = (config) => {
+                const fallbackChartData = {
+                    labels: ['Algodon peinado', 'Poliester deportivo', 'Mezclilla ligera', 'Rayon estampado'],
+                    series: [3, 6, 2, 9],
+                };
+
+                const normalizeChartData = (config) => {
+                    const labels = Array.isArray(config?.labels) ? config.labels : [];
+                    const series = Array.isArray(config?.series) ? config.series : [];
+
+                    const normalized = labels
+                        .map((label, index) => ({
+                            label: typeof label === 'string' && label.trim() !== '' ? label : null,
+                            value: Number(series[index]),
+                        }))
+                        .filter((item) => item.label !== null && Number.isFinite(item.value));
+
+                    if (normalized.length === 0) {
+                        return fallbackChartData;
+                    }
+
+                    return {
+                        labels: normalized.map((item) => item.label),
+                        series: normalized.map((item) => item.value),
+                    };
+                };
+
+                return {
                     chart: null,
-                    container: null,
-                    chartConfig: config,
+                    chartConfig: normalizeChartData(config),
+                    retryCount: 0,
+                    maxRetries: 40,
 
                     init() {
                         this.waitForDom(() => {
-                            this.setupMutationObserver();
                             this.renderChart();
                         });
                     },
@@ -119,11 +145,17 @@
 
                     // Esperar a que ApexCharts esté disponible (condición de carrera con módulos Vite)
                     if (typeof window.ApexCharts !== 'function') {
-                        setTimeout(() => this.renderChart(), 50);
+                        if (this.retryCount < this.maxRetries) {
+                            this.retryCount += 1;
+                            setTimeout(() => this.renderChart(), 50);
+                        }
+
                         return;
                     }
 
+                    this.retryCount = 0;
                     if (this.chart) this.chart.destroy();
+                    this.$refs.chart.innerHTML = '';
 
                     this.chart = new window.ApexCharts(this.$refs.chart, {
                         chart: { type: 'bar', height: 360, toolbar: { show: false }, fontFamily: 'Instrument Sans, ui-sans-serif, system-ui' },
@@ -147,24 +179,11 @@
                         }
                     },
 
-                    setupMutationObserver() {
-                        this.container = this.$refs.chartContainer;
-                        if (this.container && typeof MutationObserver !== 'undefined') {
-                            this.observer = new MutationObserver(() => {
-                                setTimeout(() => this.renderChart(), 100);
-                            });
-                            this.observer.observe(this.container, {
-                                childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style']
-                            });
-                        }
-                    },
-
                     destroy() {
                         if (this.chart) { this.chart.destroy(); this.chart = null; }
-                        if (this.observer) { this.observer.disconnect(); this.observer = null; }
                     },
-                }));
-            });
+                };
+            };
             window.laboratorioDefectosChartRegistered = true;
         }
     </script>
