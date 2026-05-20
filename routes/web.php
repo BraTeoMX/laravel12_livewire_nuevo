@@ -21,6 +21,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/password', 'settings.password')->name('settings.password');
     Volt::route('users', 'users.index')->name('users.index');
     Volt::route('roles', 'catalogo-roles.index')->name('catalogo-roles.index');
+    Route::livewire('inspeccion-tela', 'inspeccion-tela')->name('inspeccion.tela');
 });
 
 require __DIR__.'/auth.php';

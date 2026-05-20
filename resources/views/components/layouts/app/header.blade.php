@@ -95,8 +95,8 @@
                 </flux:navlist.group>
 
                 <flux:navlist.group heading="Auditorías" expandable>
-                    <flux:navlist.item icon="shield-exclamation" href="#" wire:navigate>
-                        Log de Actividades
+                    <flux:navlist.item icon="document-text" :href="route('inspeccion.tela')" wire:navigate>
+                        Inspección de Tela
                     </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
