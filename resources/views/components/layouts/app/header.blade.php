@@ -94,7 +94,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
 
-                <flux:navlist.group heading="Auditorías" expandable>
+                <flux:navlist.group heading="Auditorías" expandable :expanded="request()->routeIs('inspeccion.tela')">
                     <flux:navlist.item icon="document-text" :href="route('inspeccion.tela')" wire:navigate>
                         Inspección de Tela
                     </flux:navlist.item>
