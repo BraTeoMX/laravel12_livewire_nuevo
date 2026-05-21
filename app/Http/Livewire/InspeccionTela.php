@@ -3,6 +3,7 @@
 namespace App\Http\Livewire;
 
 use App\Models\CatalogoMaquina;
+use App\Models\CatalogoDefecto;
 use App\Models\InspeccionTelaTemporal;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,8 @@ class InspeccionTela extends Component
     public ?string $tipoMensajeBusqueda = null;
 
     public array $maquinasOptions = [];
+
+    public array $catalogoDefectosOptions = [];
 
     public array $loteIntimarkOptions = [];
 
@@ -66,11 +69,30 @@ class InspeccionTela extends Component
 
     public int $puntos_4 = 0;
 
+    public array $defectos_puntos_1 = [];
+
+    public array $defectos_puntos_2 = [];
+
+    public array $defectos_puntos_3 = [];
+
+    public array $defectos_puntos_4 = [];
+
     public function mount(): void
     {
         $this->maquinasOptions = CatalogoMaquina::query()
             ->orderBy('nombre')
             ->pluck('nombre')
+            ->values()
+            ->all();
+
+        $this->catalogoDefectosOptions = CatalogoDefecto::query()
+            ->where('estatus', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre'])
+            ->map(fn (CatalogoDefecto $defecto): array => [
+                'id' => $defecto->id,
+                'nombre' => $defecto->nombre,
+            ])
             ->values()
             ->all();
 
@@ -134,6 +156,50 @@ class InspeccionTela extends Component
         $this->ancho_contratado = min(1000, max(0, (int) $valor));
         $this->ancho_contratado_input = (string) $this->ancho_contratado;
         $this->ancho_contratado_cm = $this->convertirPulgadasACentimetros($this->ancho_contratado);
+    }
+
+    public function updatedPuntos1(): void
+    {
+        $this->sincronizarDefectosPorPuntos('puntos_1', 'defectos_puntos_1');
+    }
+
+    public function updatedPuntos2(): void
+    {
+        $this->sincronizarDefectosPorPuntos('puntos_2', 'defectos_puntos_2');
+    }
+
+    public function updatedPuntos3(): void
+    {
+        $this->sincronizarDefectosPorPuntos('puntos_3', 'defectos_puntos_3');
+    }
+
+    public function updatedPuntos4(): void
+    {
+        $this->sincronizarDefectosPorPuntos('puntos_4', 'defectos_puntos_4');
+    }
+
+    public function addDefecto(string $defectosProperty): void
+    {
+        if (! in_array($defectosProperty, $this->defectosPermitidos(), true)) {
+            return;
+        }
+
+        $this->{$defectosProperty}[] = [
+            'defecto_id' => '',
+            'cantidad' => 1,
+        ];
+    }
+
+    public function removeDefecto(string $defectosProperty, int $index): void
+    {
+        if (! in_array($defectosProperty, $this->defectosPermitidos(), true)) {
+            return;
+        }
+
+        $defectos = $this->{$defectosProperty};
+        unset($defectos[$index]);
+
+        $this->{$defectosProperty} = array_values($defectos);
     }
 
     protected function validarTerminoBusqueda(): string
@@ -365,6 +431,36 @@ class InspeccionTela extends Component
         $this->ancho_contratado_cm = 0;
     }
 
+    protected function sincronizarDefectosPorPuntos(string $puntosProperty, string $defectosProperty): void
+    {
+        $this->{$puntosProperty} = min(20, max(0, (int) $this->{$puntosProperty}));
+
+        if ($this->{$puntosProperty} === 0) {
+            $this->{$defectosProperty} = [];
+
+            return;
+        }
+
+        if (empty($this->{$defectosProperty})) {
+            $this->{$defectosProperty} = [
+                [
+                    'defecto_id' => '',
+                    'cantidad' => 1,
+                ],
+            ];
+        }
+    }
+
+    protected function defectosPermitidos(): array
+    {
+        return [
+            'defectos_puntos_1',
+            'defectos_puntos_2',
+            'defectos_puntos_3',
+            'defectos_puntos_4',
+        ];
+    }
+
     protected function normalizarRegistro(object $registro, string $termino): array
     {
         $estilo = $this->valor($registro, 'estilo');
@@ -434,6 +530,74 @@ class InspeccionTela extends Component
     protected function convertirPulgadasACentimetros(int $pulgadas): int
     {
         return (int) round($pulgadas * 2.54);
+    }
+
+    public function guardarRegistro(): void
+    {
+        $this->validate([
+            'maquina' => 'required|string',
+            'lote_intimark' => 'required|string',
+            'ancho_cortable' => 'required|numeric|min:0.01',
+            'numero_piezas' => 'required|integer|min:1',
+            'numero_lote' => 'required|string|max:100',
+            'yarda_ticket' => 'required|numeric|min:0.01',
+            'yarda_actual' => 'required|numeric|min:0.01',
+        ], [
+            'maquina.required' => 'La máquina es obligatoria.',
+            'lote_intimark.required' => 'El lote intimark es obligatorio.',
+            'ancho_cortable.required' => 'El ancho cortable es obligatorio.',
+            'numero_piezas.required' => 'El número de piezas es obligatorio.',
+            'numero_lote.required' => 'El lote teñido es obligatorio.',
+            'yarda_ticket.required' => 'La yarda ticket es obligatoria.',
+            'yarda_actual.required' => 'La yarda actual es obligatoria.',
+        ]);
+
+        $customErrors = [];
+
+        foreach ([
+            ['puntos_1', 'defectos_puntos_1', '1 Punto'],
+            ['puntos_2', 'defectos_puntos_2', '2 Puntos'],
+            ['puntos_3', 'defectos_puntos_3', '3 Puntos'],
+            ['puntos_4', 'defectos_puntos_4', '4 Puntos'],
+        ] as [$puntosProp, $defectosProp, $label]) {
+            $totalPuntos = (int) $this->{$puntosProp};
+            if ($totalPuntos > 0) {
+                $defectos = $this->{$defectosProp};
+                
+                if (empty($defectos)) {
+                    $customErrors[$defectosProp] = "Debe agregar al menos un defecto para {$label}.";
+                    continue;
+                }
+
+                $suma = 0;
+                $defectosIds = [];
+                foreach ($defectos as $index => $defecto) {
+                    if (empty($defecto['defecto_id'])) {
+                        $customErrors["{$defectosProp}.{$index}.defecto_id"] = "El defecto es obligatorio.";
+                    } else {
+                        if (in_array($defecto['defecto_id'], $defectosIds)) {
+                            $customErrors["{$defectosProp}.{$index}.defecto_id"] = "Este defecto ya fue seleccionado.";
+                        }
+                        $defectosIds[] = $defecto['defecto_id'];
+                    }
+                    $suma += (int) ($defecto['cantidad'] ?? 0);
+                }
+
+                if ($suma !== $totalPuntos) {
+                    $customErrors[$defectosProp] = "La suma de cantidades en {$label} debe ser exactamente {$totalPuntos}. Suma actual: {$suma}.";
+                }
+            }
+        }
+
+        if (!empty($customErrors)) {
+            throw \Illuminate\Validation\ValidationException::withMessages($customErrors);
+        }
+
+        // Simulación de guardado
+        $this->tipoMensajeBusqueda = 'success';
+        $this->mensajeBusqueda = 'Registro validado correctamente (Guardado pendiente de implementación).';
+        
+        // Aquí iría la lógica para guardar el modelo
     }
 
     public function render()

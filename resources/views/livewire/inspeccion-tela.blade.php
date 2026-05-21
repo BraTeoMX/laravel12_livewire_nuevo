@@ -225,11 +225,81 @@
                         'puntos_3' => '3 Puntos',
                         'puntos_4' => '4 Puntos',
                     ] as $campoPuntos => $labelPuntos)
-                        <flux:select wire:model.live="{{ $campoPuntos }}" label="{{ $labelPuntos }}">
-                            @for ($i = 0; $i <= 20; $i++)
-                                <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
-                            @endfor
-                        </flux:select>
+                        @php
+                            $defectosProperty = 'defectos_' . $campoPuntos;
+                            $defectos = $this->{$defectosProperty};
+                            $totalPuntos = (int) $this->{$campoPuntos};
+                        @endphp
+
+                        <div class="space-y-3 rounded-md border border-zinc-200 p-3 dark:border-zinc-700">
+                            <flux:select wire:model.live="{{ $campoPuntos }}" label="{{ $labelPuntos }}">
+                                @for ($i = 0; $i <= 20; $i++)
+                                    <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
+                                @endfor
+                            </flux:select>
+
+                            @if ($totalPuntos > 0)
+                                <div class="space-y-2">
+                                    @foreach ($defectos as $index => $fila)
+                                        <div class="grid grid-cols-[minmax(0,1fr)_5rem_auto] items-end gap-2" wire:key="{{ $defectosProperty }}-{{ $index }}">
+                                            <flux:select
+                                                wire:model.live="{{ $defectosProperty }}.{{ $index }}.defecto_id"
+                                                label="Defecto"
+                                                placeholder="Selecciona"
+                                            >
+                                                @php
+                                                    $defectosSeleccionadosOtros = collect($defectos)
+                                                        ->reject(fn ($d, $k) => $k === $index)
+                                                        ->pluck('defecto_id')
+                                                        ->filter()
+                                                        ->toArray();
+                                                @endphp
+                                                @foreach ($catalogoDefectosOptions as $defecto)
+                                                    @if (!in_array($defecto['id'], $defectosSeleccionadosOtros))
+                                                        <flux:select.option value="{{ $defecto['id'] }}">{{ $defecto['nombre'] }}</flux:select.option>
+                                                    @endif
+                                                @endforeach
+                                            </flux:select>
+
+                                            @php
+                                                $sumaOtros = collect($defectos)->reject(fn ($d, $k) => $k === $index)->sum(fn ($d) => (int)($d['cantidad'] ?? 0));
+                                                $maximoPermitido = max(1, $totalPuntos - $sumaOtros);
+                                            @endphp
+
+                                            <flux:select
+                                                wire:model.live="{{ $defectosProperty }}.{{ $index }}.cantidad"
+                                                label="Cant."
+                                            >
+                                                @for ($i = 1; $i <= $maximoPermitido; $i++)
+                                                    <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
+                                                @endfor
+                                            </flux:select>
+
+                                            <flux:button
+                                                type="button"
+                                                variant="ghost"
+                                                icon="x-mark"
+                                                wire:click="removeDefecto('{{ $defectosProperty }}', {{ $index }})"
+                                            />
+                                        </div>
+                                    @endforeach
+
+                                    @error($defectosProperty)
+                                        <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                    @enderror
+
+                                    <flux:button
+                                        type="button"
+                                        variant="filled"
+                                        icon="plus"
+                                        class="w-full justify-center"
+                                        wire:click="addDefecto('{{ $defectosProperty }}')"
+                                    >
+                                        Agregar defecto
+                                    </flux:button>
+                                </div>
+                            @endif
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -240,6 +310,19 @@
                 rows="3"
                 class="md:col-span-2 xl:col-span-6"
             />
+        </div>
+
+        <div class="mt-6 flex justify-end border-t border-zinc-200 pt-4 dark:border-zinc-700">
+            <flux:button
+                type="button"
+                variant="primary"
+                wire:click="guardarRegistro"
+                wire:loading.attr="disabled"
+                wire:target="guardarRegistro"
+            >
+                <span wire:loading.remove wire:target="guardarRegistro">Guardar Registro</span>
+                <span wire:loading wire:target="guardarRegistro">Guardando...</span>
+            </flux:button>
         </div>
     </section>
 
