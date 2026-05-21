@@ -593,11 +593,66 @@ class InspeccionTela extends Component
             throw \Illuminate\Validation\ValidationException::withMessages($customErrors);
         }
 
-        // Simulación de guardado
-        $this->tipoMensajeBusqueda = 'success';
-        $this->mensajeBusqueda = 'Registro validado correctamente (Guardado pendiente de implementación).';
-        
-        // Aquí iría la lógica para guardar el modelo
+        try {
+            DB::transaction(function () {
+                $inspeccion = \App\Models\Inspeccion::create([
+                    'user_id' => auth()->id() ?? 1, // Ajusta según tu lógica de autenticación
+                    'maquina' => $this->maquina,
+                    'lote_intimark' => $this->lote_intimark,
+                    'articulo' => $this->articulo,
+                    'proveedor' => $this->proveedor,
+                    'color_nombre' => $this->color_nombre,
+                    'ancho_contratado_input' => $this->ancho_contratado_input === '' ? null : $this->ancho_contratado_input,
+                    'ancho_contratado_cm' => $this->ancho_contratado_cm,
+                    'material' => $this->material,
+                    'orden_compra' => $this->orden_compra,
+                    'numero_recepcion' => $this->numero_recepcion,
+                    'ancho_cortable' => $this->ancho_cortable,
+                    'numero_piezas' => $this->numero_piezas,
+                    'numero_lote' => $this->numero_lote,
+                    'yarda_ticket' => $this->yarda_ticket,
+                    'yarda_actual' => $this->yarda_actual,
+                    'observaciones' => $this->observaciones,
+                ]);
+
+                $defectosAInsertar = [];
+
+                foreach ([
+                    ['puntos_1', 'defectos_puntos_1', 1],
+                    ['puntos_2', 'defectos_puntos_2', 2],
+                    ['puntos_3', 'defectos_puntos_3', 3],
+                    ['puntos_4', 'defectos_puntos_4', 4],
+                ] as [$puntosProp, $defectosProp, $puntosValue]) {
+                    if ((int) $this->{$puntosProp} > 0) {
+                        foreach ($this->{$defectosProp} as $defecto) {
+                            $defectosAInsertar[] = [
+                                'defecto_id' => $defecto['defecto_id'],
+                                'puntos' => $puntosValue,
+                                'cantidad' => $defecto['cantidad'],
+                            ];
+                        }
+                    }
+                }
+
+                if (!empty($defectosAInsertar)) {
+                    $inspeccion->defectos()->createMany($defectosAInsertar);
+                }
+            });
+
+            $this->tipoMensajeBusqueda = 'success';
+            $this->mensajeBusqueda = 'Registro de inspección guardado exitosamente.';
+            
+            // Opcionalmente puedes limpiar el formulario aquí
+            // $this->limpiarBusqueda();
+            
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error guardando inspección de tela', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $this->tipoMensajeBusqueda = 'error';
+            $this->mensajeBusqueda = 'Ocurrió un error al guardar el registro. Revisa los logs para más detalles.';
+        }
     }
 
     public function render()
