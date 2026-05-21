@@ -664,6 +664,11 @@ class InspeccionTela extends Component
 
     public function render()
     {
-        return view('livewire.inspeccion-tela');
+        $registrosDelDia = \App\Models\Inspeccion::query()
+            ->whereDate('created_at', today())
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return view('livewire.inspeccion-tela', compact('registrosDelDia'));
     }
 }

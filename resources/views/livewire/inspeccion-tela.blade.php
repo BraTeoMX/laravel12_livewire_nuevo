@@ -328,45 +328,36 @@
 
     <section class="rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
         <div class="border-b border-zinc-200 p-4 dark:border-zinc-700">
-            <flux:heading size="lg">Resultados de búsqueda</flux:heading>
-            <flux:subheading>Registros encontrados y cacheados temporalmente en MySQL</flux:subheading>
+            <flux:heading size="lg">Registros del Día</flux:heading>
+            <flux:subheading>Inspecciones generadas hoy (ordenadas de más antiguas a más recientes)</flux:subheading>
         </div>
 
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-zinc-200 text-sm dark:divide-zinc-700">
                 <thead class="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
                     <tr>
+                        <th class="px-4 py-3 text-left font-medium">Hora</th>
                         <th class="px-4 py-3 text-left font-medium">Recepción</th>
-                        <th class="px-4 py-3 text-left font-medium">Orden compra</th>
-                        <th class="px-4 py-3 text-left font-medium">Proveedor</th>
-                        <th class="px-4 py-3 text-left font-medium">Artículo</th>
-                        <th class="px-4 py-3 text-left font-medium">Producto</th>
-                        <th class="px-4 py-3 text-left font-medium">Ancho</th>
-                        <th class="px-4 py-3 text-left font-medium">Talla</th>
                         <th class="px-4 py-3 text-left font-medium">Lote Intimark</th>
+                        <th class="px-4 py-3 text-left font-medium">Máquina</th>
+                        <th class="px-4 py-3 text-left font-medium">Artículo</th>
+                        <th class="px-4 py-3 text-center font-medium">Puntos Totales</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                    @forelse ($resultadosBusqueda as $resultado)
-                        <tr wire:key="resultado-{{ $resultado['numero_diario'] }}-{{ $resultado['lote_intimark'] }}-{{ $loop->index }}" class="hover:bg-zinc-50 dark:hover:bg-zinc-800/70">
-                            <td class="whitespace-nowrap px-4 py-3 text-zinc-700 dark:text-zinc-200">{{ $resultado['numero_diario'] ?? 'N/A' }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 text-zinc-700 dark:text-zinc-200">{{ $resultado['orden_compra'] ?? 'N/A' }}</td>
-                            <td class="min-w-48 px-4 py-3 text-zinc-700 dark:text-zinc-200">{{ $resultado['proveedor'] ?? 'N/A' }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">{{ $resultado['articulo'] ?? 'N/A' }}</td>
-                            <td class="min-w-64 px-4 py-3 text-zinc-700 dark:text-zinc-200">
-                                <div>{{ $resultado['nombre_producto'] ?? 'N/A' }}</div>
-                                <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $resultado['nombre_producto_externo'] ?? '' }}</div>
-                            </td>
-                            <td class="whitespace-nowrap px-4 py-3 text-zinc-700 dark:text-zinc-200">
-                                {{ $resultado['ancho_contratado'] ? $resultado['ancho_contratado'] . '"' : 'N/A' }}
-                            </td>
-                            <td class="whitespace-nowrap px-4 py-3 text-zinc-700 dark:text-zinc-200">{{ $resultado['talla'] ?? 'N/A' }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 text-zinc-700 dark:text-zinc-200">{{ $resultado['lote_intimark'] ?? 'N/A' }}</td>
+                    @forelse ($registrosDelDia as $registro)
+                        <tr wire:key="registro-dia-{{ $registro->id }}" class="hover:bg-zinc-50 dark:hover:bg-zinc-800/70">
+                            <td class="whitespace-nowrap px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">{{ $registro->numero_recepcion }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-zinc-700 dark:text-zinc-200">{{ $registro->lote_intimark }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-zinc-700 dark:text-zinc-200">{{ $registro->maquina }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-zinc-700 dark:text-zinc-200">{{ $registro->articulo }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-center font-bold text-zinc-900 dark:text-zinc-100">{{ $registro->total_puntos_defectos }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-zinc-700 dark:text-zinc-200">{{ $registro->created_at->format('h:i A') }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                                Ingresa una orden de compra o recepción para consultar información.
+                            <td colspan="6" class="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                                Aún no se han generado registros el día de hoy.
                             </td>
                         </tr>
                     @endforelse
