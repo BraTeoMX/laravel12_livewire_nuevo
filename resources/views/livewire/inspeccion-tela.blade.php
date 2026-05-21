@@ -336,12 +336,12 @@
             <table class="min-w-full divide-y divide-zinc-200 text-sm dark:divide-zinc-700">
                 <thead class="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
                     <tr>
-                        <th class="px-4 py-3 text-left font-medium">Hora</th>
                         <th class="px-4 py-3 text-left font-medium">Recepción</th>
                         <th class="px-4 py-3 text-left font-medium">Lote Intimark</th>
                         <th class="px-4 py-3 text-left font-medium">Máquina</th>
                         <th class="px-4 py-3 text-left font-medium">Artículo</th>
                         <th class="px-4 py-3 text-center font-medium">Puntos Totales</th>
+                        <th class="px-4 py-3 text-left font-medium">Hora</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
