@@ -11,7 +11,7 @@
             <flux:input
                 wire:model="terminoBusqueda"
                 label="Orden de compra o recepción"
-                placeholder="Ej. REC12345 u OC12345"
+                placeholder="Ej. REC12345"
                 autocomplete="off"
                 clearable
             />
@@ -68,6 +68,179 @@
                 {{ $mensajeBusqueda }}
             </div>
         @endif
+    </section>
+
+    <section class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+        <div class="border-b border-zinc-200 pb-4 dark:border-zinc-700">
+            <flux:heading size="lg">1. Encabezado</flux:heading>
+            <flux:subheading>Datos base del lote seleccionado</flux:subheading>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <flux:select
+                wire:model="maquina"
+                label="Máquina"
+                placeholder="Selecciona una máquina"
+                class="xl:col-span-2"
+            >
+                @forelse ($maquinasOptions as $maquinaOption)
+                    <flux:select.option value="{{ $maquinaOption }}">{{ $maquinaOption }}</flux:select.option>
+                @empty
+                    <flux:select.option value="">No hay máquinas disponibles</flux:select.option>
+                @endforelse
+            </flux:select>
+
+            <flux:select
+                wire:model.live="lote_intimark"
+                label="Lote Intimark"
+                placeholder="Busca para cargar opciones"
+                class="xl:col-span-2"
+                :disabled="empty($loteIntimarkOptions)"
+            >
+                @forelse ($loteIntimarkOptions as $loteOption)
+                    <flux:select.option value="{{ $loteOption }}">{{ $loteOption }}</flux:select.option>
+                @empty
+                    <flux:select.option value="">Busca para cargar opciones</flux:select.option>
+                @endforelse
+            </flux:select>
+
+            <flux:input
+                wire:model="articulo"
+                label="Artículo"
+                readonly
+                class="xl:col-span-2"
+            />
+
+            <flux:input
+                wire:model="proveedor"
+                label="Proveedor"
+                readonly
+                class="xl:col-span-2"
+            />
+
+            <flux:input
+                wire:model="color_nombre"
+                label="Nombre Color"
+                readonly
+                class="xl:col-span-2"
+            />
+
+            <flux:input
+                wire:model.live="ancho_contratado_input"
+                type="number"
+                min="0"
+                max="1000"
+                step="1"
+                label="Ancho Contratado (Pulgadas)"
+                placeholder="0"
+                class="xl:col-span-1"
+            />
+
+            <flux:input
+                wire:model="ancho_contratado_cm"
+                type="number"
+                label="Ancho Contratado (Centímetros)"
+                readonly
+                class="xl:col-span-1"
+            />
+
+            <flux:input
+                wire:model="material"
+                label="Material"
+                readonly
+                class="xl:col-span-2"
+            />
+
+            <flux:input
+                wire:model="orden_compra"
+                label="Orden Compra"
+                readonly
+                class="xl:col-span-1"
+            />
+
+            <flux:input
+                wire:model="numero_recepcion"
+                label="No. Recepción"
+                readonly
+                class="xl:col-span-1"
+            />
+        </div>
+    </section>
+
+    <section class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+        <div class="border-b border-zinc-200 pb-4 dark:border-zinc-700">
+            <flux:heading size="lg">2. Detalle de Inspección</flux:heading>
+            <flux:subheading>Parámetros iniciales del rollo inspeccionado</flux:subheading>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <flux:input
+                wire:model.live.debounce.300ms="ancho_cortable"
+                type="number"
+                step="0.01"
+                label="Ancho Cortable"
+                class="xl:col-span-2"
+            />
+
+            <flux:input
+                wire:model.live.debounce.300ms="numero_piezas"
+                type="number"
+                step="1"
+                label="# Piezas"
+                class="xl:col-span-2"
+            />
+
+            <flux:input
+                wire:model.live.debounce.300ms="numero_lote"
+                label="Lote Teñido"
+                class="xl:col-span-2"
+            />
+
+            <flux:input
+                wire:model.live.debounce.300ms="yarda_ticket"
+                type="number"
+                step="0.01"
+                label="Yarda Ticket"
+                class="xl:col-span-2"
+            />
+
+            <flux:input
+                wire:model.live.debounce.300ms="yarda_actual"
+                type="number"
+                step="0.01"
+                label="Yarda Actual"
+                class="xl:col-span-2"
+            />
+
+            <div class="md:col-span-2 xl:col-span-6">
+                <div class="mb-2">
+                    <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">Defectos por Puntos</p>
+                    <p class="text-xs text-zinc-500 dark:text-zinc-400">Selecciona el total por tipo. El desglose se integrará en el siguiente paso.</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+                    @foreach ([
+                        'puntos_1' => '1 Punto',
+                        'puntos_2' => '2 Puntos',
+                        'puntos_3' => '3 Puntos',
+                        'puntos_4' => '4 Puntos',
+                    ] as $campoPuntos => $labelPuntos)
+                        <flux:select wire:model.live="{{ $campoPuntos }}" label="{{ $labelPuntos }}">
+                            @for ($i = 0; $i <= 20; $i++)
+                                <flux:select.option value="{{ $i }}">{{ $i }}</flux:select.option>
+                            @endfor
+                        </flux:select>
+                    @endforeach
+                </div>
+            </div>
+
+            <flux:textarea
+                wire:model.live.debounce.300ms="observaciones"
+                label="Observaciones"
+                rows="3"
+                class="md:col-span-2 xl:col-span-6"
+            />
+        </div>
     </section>
 
     <section class="rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900">

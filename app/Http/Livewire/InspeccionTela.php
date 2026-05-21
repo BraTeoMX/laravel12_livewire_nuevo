@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Models\CatalogoMaquina;
 use App\Models\InspeccionTelaTemporal;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -19,16 +20,75 @@ class InspeccionTela extends Component
 
     public ?string $tipoMensajeBusqueda = null;
 
+    public array $maquinasOptions = [];
+
+    public array $loteIntimarkOptions = [];
+
+    public string $maquina = '';
+
+    public string $lote_intimark = '';
+
+    public string $proveedor = '';
+
+    public string $articulo = '';
+
+    public string $color_nombre = '';
+
+    public string $material = '';
+
+    public string $orden_compra = '';
+
+    public string $numero_recepcion = '';
+
+    public string $ancho_contratado_input = '';
+
+    public int $ancho_contratado = 0;
+
+    public int $ancho_contratado_cm = 0;
+
+    public string $ancho_cortable = '';
+
+    public string $numero_piezas = '';
+
+    public string $numero_lote = '';
+
+    public string $yarda_ticket = '';
+
+    public string $yarda_actual = '';
+
+    public string $observaciones = '';
+
+    public int $puntos_1 = 0;
+
+    public int $puntos_2 = 0;
+
+    public int $puntos_3 = 0;
+
+    public int $puntos_4 = 0;
+
+    public function mount(): void
+    {
+        $this->maquinasOptions = CatalogoMaquina::query()
+            ->orderBy('nombre')
+            ->pluck('nombre')
+            ->values()
+            ->all();
+
+        $this->maquina = $this->maquinasOptions[0] ?? '';
+    }
+
     public function buscarInformacion(): void
     {
         $termino = $this->validarTerminoBusqueda();
 
         $this->reset('resultadosBusqueda', 'mensajeBusqueda', 'tipoMensajeBusqueda');
+        $this->resetEncabezadoTela();
 
         $registrosLocales = $this->consultarMySqlPorNumeroDiario($termino);
 
         if ($registrosLocales->isNotEmpty()) {
             $this->resultadosBusqueda = $this->mapearTemporalesParaVista($registrosLocales);
+            $this->prepararEncabezadoDesdeResultados();
             $this->tipoMensajeBusqueda = 'success';
             $this->mensajeBusqueda = "Información encontrada en MySQL para la recepción {$termino}.";
 
@@ -43,6 +103,7 @@ class InspeccionTela extends Component
         $termino = $this->validarTerminoBusqueda();
 
         $this->reset('resultadosBusqueda', 'mensajeBusqueda', 'tipoMensajeBusqueda');
+        $this->resetEncabezadoTela();
 
         $this->buscarEnSqlServerYSincronizar($termino, 'Consulta directa a SQL Server completada.');
     }
@@ -50,7 +111,29 @@ class InspeccionTela extends Component
     public function limpiarBusqueda(): void
     {
         $this->reset('terminoBusqueda', 'resultadosBusqueda', 'mensajeBusqueda', 'tipoMensajeBusqueda');
+        $this->resetEncabezadoTela();
         $this->resetValidation();
+    }
+
+    public function updatedLoteIntimark(): void
+    {
+        $this->llenarEncabezadoDesdeLote();
+    }
+
+    public function updatedAnchoContratadoInput(): void
+    {
+        $valor = trim($this->ancho_contratado_input);
+
+        if ($valor === '' || ! is_numeric($valor)) {
+            $this->ancho_contratado = 0;
+            $this->ancho_contratado_cm = 0;
+
+            return;
+        }
+
+        $this->ancho_contratado = min(1000, max(0, (int) $valor));
+        $this->ancho_contratado_input = (string) $this->ancho_contratado;
+        $this->ancho_contratado_cm = $this->convertirPulgadasACentimetros($this->ancho_contratado);
     }
 
     protected function validarTerminoBusqueda(): string
@@ -94,6 +177,8 @@ class InspeccionTela extends Component
             ->map(fn (object $registro): array => $this->normalizarRegistro($registro, $termino))
             ->values()
             ->all();
+
+        $this->prepararEncabezadoDesdeResultados();
 
         $this->tipoMensajeBusqueda = 'success';
         $this->mensajeBusqueda = sprintf(
@@ -219,6 +304,67 @@ class InspeccionTela extends Component
             ->all();
     }
 
+    protected function prepararEncabezadoDesdeResultados(): void
+    {
+        $this->loteIntimarkOptions = collect($this->resultadosBusqueda)
+            ->pluck('lote_intimark')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $this->lote_intimark = $this->loteIntimarkOptions[0] ?? '';
+        $this->llenarEncabezadoDesdeLote();
+    }
+
+    protected function llenarEncabezadoDesdeLote(): void
+    {
+        if ($this->lote_intimark === '') {
+            $this->resetCamposTela();
+
+            return;
+        }
+
+        $registro = collect($this->resultadosBusqueda)
+            ->first(fn (array $resultado): bool => (string) ($resultado['lote_intimark'] ?? '') === $this->lote_intimark);
+
+        if (! $registro) {
+            $this->resetCamposTela();
+
+            return;
+        }
+
+        $this->proveedor = (string) ($registro['proveedor'] ?? '');
+        $this->articulo = (string) ($registro['articulo'] ?? '');
+        $this->color_nombre = (string) ($registro['nombre_producto'] ?? '');
+        $this->material = (string) ($registro['estilo_externo'] ?? '');
+        $this->orden_compra = (string) ($registro['orden_compra'] ?? '');
+        $this->numero_recepcion = (string) ($registro['numero_diario'] ?? '');
+        $this->ancho_contratado = (int) ($registro['ancho_contratado'] ?? 0);
+        $this->ancho_contratado_input = $this->ancho_contratado > 0 ? (string) $this->ancho_contratado : '';
+        $this->ancho_contratado_cm = $this->convertirPulgadasACentimetros($this->ancho_contratado);
+    }
+
+    protected function resetEncabezadoTela(): void
+    {
+        $this->loteIntimarkOptions = [];
+        $this->lote_intimark = '';
+        $this->resetCamposTela();
+    }
+
+    protected function resetCamposTela(): void
+    {
+        $this->proveedor = '';
+        $this->articulo = '';
+        $this->color_nombre = '';
+        $this->material = '';
+        $this->orden_compra = '';
+        $this->numero_recepcion = '';
+        $this->ancho_contratado_input = '';
+        $this->ancho_contratado = 0;
+        $this->ancho_contratado_cm = 0;
+    }
+
     protected function normalizarRegistro(object $registro, string $termino): array
     {
         $estilo = $this->valor($registro, 'estilo');
@@ -283,6 +429,11 @@ class InspeccionTela extends Component
         }
 
         return $estilo ?: $color;
+    }
+
+    protected function convertirPulgadasACentimetros(int $pulgadas): int
+    {
+        return (int) round($pulgadas * 2.54);
     }
 
     public function render()
