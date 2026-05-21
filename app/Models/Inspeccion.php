@@ -33,6 +33,7 @@ class Inspeccion extends Model
         'yarda_ticket',
         'yarda_actual',
         'observaciones',
+        'total_puntos_defectos',
     ];
 
     protected $casts = [
@@ -42,6 +43,7 @@ class Inspeccion extends Model
         'numero_piezas' => 'integer',
         'yarda_ticket' => 'decimal:2',
         'yarda_actual' => 'decimal:2',
+        'total_puntos_defectos' => 'integer',
     ];
 
     public function user(): BelongsTo

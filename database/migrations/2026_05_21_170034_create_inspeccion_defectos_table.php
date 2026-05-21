@@ -14,6 +14,7 @@ return new class extends Migration
             $table->foreignId('defecto_id')->constrained('catalogo_defectos');
             $table->integer('puntos')->comment('1, 2, 3 o 4');
             $table->integer('cantidad');
+            $table->integer('puntos_calculados')->comment('Resultado de cantidad * puntos');
             $table->timestamps();
         });
     }

@@ -27,6 +27,7 @@ return new class extends Migration
             $table->decimal('yarda_ticket', 8, 2);
             $table->decimal('yarda_actual', 8, 2);
             $table->text('observaciones')->nullable();
+            $table->integer('total_puntos_defectos')->default(0)->comment('Suma total de (cantidad * puntos) de todos sus defectos');
             $table->timestamps();
         });
     }

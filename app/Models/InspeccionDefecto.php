@@ -19,11 +19,13 @@ class InspeccionDefecto extends Model
         'defecto_id',
         'puntos',
         'cantidad',
+        'puntos_calculados',
     ];
 
     protected $casts = [
         'puntos' => 'integer',
         'cantidad' => 'integer',
+        'puntos_calculados' => 'integer',
     ];
 
     public function inspeccion(): BelongsTo

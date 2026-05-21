@@ -616,6 +616,7 @@ class InspeccionTela extends Component
                 ]);
 
                 $defectosAInsertar = [];
+                $totalPuntosDefectosCalculados = 0;
 
                 foreach ([
                     ['puntos_1', 'defectos_puntos_1', 1],
@@ -625,10 +626,14 @@ class InspeccionTela extends Component
                 ] as [$puntosProp, $defectosProp, $puntosValue]) {
                     if ((int) $this->{$puntosProp} > 0) {
                         foreach ($this->{$defectosProp} as $defecto) {
+                            $puntosCalculados = ((int) $defecto['cantidad']) * $puntosValue;
+                            $totalPuntosDefectosCalculados += $puntosCalculados;
+
                             $defectosAInsertar[] = [
                                 'defecto_id' => $defecto['defecto_id'],
                                 'puntos' => $puntosValue,
                                 'cantidad' => $defecto['cantidad'],
+                                'puntos_calculados' => $puntosCalculados,
                             ];
                         }
                     }
@@ -637,6 +642,8 @@ class InspeccionTela extends Component
                 if (!empty($defectosAInsertar)) {
                     $inspeccion->defectos()->createMany($defectosAInsertar);
                 }
+
+                $inspeccion->update(['total_puntos_defectos' => $totalPuntosDefectosCalculados]);
             });
 
             $this->tipoMensajeBusqueda = 'success';
