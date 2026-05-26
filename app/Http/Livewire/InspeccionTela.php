@@ -652,8 +652,7 @@ class InspeccionTela extends Component
             $this->dispatch('notify', type: 'success', message: 'Registro de inspección guardado exitosamente.');
             $this->dispatch('pg:eventRefresh-registros_del_dia_table');
             
-            // Opcionalmente puedes limpiar el formulario aquí
-            // $this->limpiarBusqueda();
+            $this->resetDetalleInspeccion();
             
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Error guardando inspección de tela', [
@@ -662,6 +661,27 @@ class InspeccionTela extends Component
             ]);
             $this->dispatch('notify', type: 'error', message: 'Ocurrió un error al guardar el registro. Revisa los logs para más detalles.');
         }
+    }
+
+    protected function resetDetalleInspeccion(): void
+    {
+        $this->reset([
+            'ancho_cortable',
+            'numero_piezas',
+            'numero_lote',
+            'yarda_ticket',
+            'yarda_actual',
+            'observaciones',
+            'puntos_1',
+            'puntos_2',
+            'puntos_3',
+            'puntos_4',
+            'defectos_puntos_1',
+            'defectos_puntos_2',
+            'defectos_puntos_3',
+            'defectos_puntos_4',
+        ]);
+        $this->resetValidation();
     }
 
     public function render()
