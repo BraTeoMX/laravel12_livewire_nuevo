@@ -537,6 +537,7 @@ class InspeccionTela extends Component
         $this->validate([
             'maquina' => 'required|string',
             'lote_intimark' => 'required|string',
+            'ancho_contratado_input' => 'required|numeric|gt:0',
             'ancho_cortable' => 'required|numeric|min:0.01',
             'numero_piezas' => 'required|integer|min:1',
             'numero_lote' => 'required|string|max:100',
@@ -545,6 +546,8 @@ class InspeccionTela extends Component
         ], [
             'maquina.required' => 'La máquina es obligatoria.',
             'lote_intimark.required' => 'El lote intimark es obligatorio.',
+            'ancho_contratado_input.required' => 'El ancho contratado es obligatorio.',
+            'ancho_contratado_input.gt' => 'El ancho contratado debe ser mayor a 0.',
             'ancho_cortable.required' => 'El ancho cortable es obligatorio.',
             'numero_piezas.required' => 'El número de piezas es obligatorio.',
             'numero_lote.required' => 'El lote teñido es obligatorio.',
@@ -646,8 +649,8 @@ class InspeccionTela extends Component
                 $inspeccion->update(['total_puntos_defectos' => $totalPuntosDefectosCalculados]);
             });
 
-            $this->tipoMensajeBusqueda = 'success';
-            $this->mensajeBusqueda = 'Registro de inspección guardado exitosamente.';
+            $this->dispatch('notify', type: 'success', message: 'Registro de inspección guardado exitosamente.');
+            $this->dispatch('pg:eventRefresh-registros_del_dia_table');
             
             // Opcionalmente puedes limpiar el formulario aquí
             // $this->limpiarBusqueda();
@@ -657,18 +660,12 @@ class InspeccionTela extends Component
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            $this->tipoMensajeBusqueda = 'error';
-            $this->mensajeBusqueda = 'Ocurrió un error al guardar el registro. Revisa los logs para más detalles.';
+            $this->dispatch('notify', type: 'error', message: 'Ocurrió un error al guardar el registro. Revisa los logs para más detalles.');
         }
     }
 
     public function render()
     {
-        $registrosDelDia = \App\Models\Inspeccion::query()
-            ->whereDate('created_at', today())
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        return view('livewire.inspeccion-tela', compact('registrosDelDia'));
+        return view('livewire.inspeccion-tela');
     }
 }
