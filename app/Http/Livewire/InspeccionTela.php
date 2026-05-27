@@ -4,6 +4,7 @@ namespace App\Http\Livewire;
 
 use App\Models\CatalogoMaquina;
 use App\Models\CatalogoDefecto;
+use App\Models\Inspeccion;
 use App\Models\InspeccionTelaTemporal;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -96,7 +97,61 @@ class InspeccionTela extends Component
             ->values()
             ->all();
 
-        $this->maquina = $this->maquinasOptions[0] ?? '';
+        $ultimoRegistroHoy = Inspeccion::query()
+            ->where('user_id', auth()->id() ?? 1)
+            ->whereDate('created_at', today())
+            ->latest()
+            ->first();
+
+        if ($ultimoRegistroHoy) {
+            $this->cargarDatosReferencia($ultimoRegistroHoy);
+        } else {
+            $this->maquina = $this->maquinasOptions[0] ?? '';
+        }
+    }
+
+    protected function cargarDatosReferencia(Inspeccion $ultimoRegistro): void
+    {
+        $this->terminoBusqueda = $ultimoRegistro->numero_recepcion ?? '';
+
+        if ($this->terminoBusqueda !== '') {
+            $registrosLocales = $this->consultarMySqlPorNumeroDiario($this->terminoBusqueda);
+
+            if ($registrosLocales->isNotEmpty()) {
+                $this->resultadosBusqueda = $this->mapearTemporalesParaVista($registrosLocales);
+            } else {
+                try {
+                    $registros = $this->consultarSqlServer($this->terminoBusqueda);
+                    if ($registros->isNotEmpty()) {
+                        $this->sincronizarRegistrosTemporales($registros, $this->terminoBusqueda);
+                        $this->resultadosBusqueda = $registros
+                            ->map(fn (object $registro): array => $this->normalizarRegistro($registro, $this->terminoBusqueda))
+                            ->values()
+                            ->all();
+                    }
+                } catch (Throwable $e) {
+                    Log::error('Error precargando búsqueda de referencia en mount', ['exception' => $e]);
+                }
+            }
+
+            $this->loteIntimarkOptions = collect($this->resultadosBusqueda)
+                ->pluck('lote_intimark')
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
+            $this->maquina = $ultimoRegistro->maquina ?? '';
+            $this->lote_intimark = $ultimoRegistro->lote_intimark ?? '';
+            
+            $this->llenarEncabezadoDesdeLote();
+
+            if ($ultimoRegistro->ancho_contratado_input !== null) {
+                $this->ancho_contratado_input = (string) (int) $ultimoRegistro->ancho_contratado_input;
+                $this->ancho_contratado = (int) $this->ancho_contratado_input;
+                $this->ancho_contratado_cm = (int) $ultimoRegistro->ancho_contratado_cm;
+            }
+        }
     }
 
     public function buscarInformacion(): void

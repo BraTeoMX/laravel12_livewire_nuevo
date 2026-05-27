@@ -13,7 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Asegurar que catalogo_roles.id sea UNSIGNED (compatible con INT UNSIGNED)
-        DB::unprepared('ALTER TABLE catalogo_roles MODIFY COLUMN id INT UNSIGNED NOT NULL AUTO_INCREMENT;');
+        if (DB::getDriverName() === 'mysql') {
+            DB::unprepared('ALTER TABLE catalogo_roles MODIFY COLUMN id INT UNSIGNED NOT NULL AUTO_INCREMENT;');
+        }
 
         // 2. Si la columna role_id ya existe, eliminar la FK conflictiva si existe
         if (Schema::hasColumn('users', 'role_id')) {
@@ -54,6 +56,8 @@ return new class extends Migration
             $table->dropColumn('role_id');
         });
 
-        DB::unprepared('ALTER TABLE catalogo_roles MODIFY COLUMN id INT NOT NULL AUTO_INCREMENT;');
+        if (DB::getDriverName() === 'mysql') {
+            DB::unprepared('ALTER TABLE catalogo_roles MODIFY COLUMN id INT NOT NULL AUTO_INCREMENT;');
+        }
     }
 };
