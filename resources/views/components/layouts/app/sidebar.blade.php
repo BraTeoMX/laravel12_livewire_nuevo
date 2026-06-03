@@ -29,25 +29,31 @@
             <div id="sidebar-nav">
             <flux:navlist variant="outline">
                 <flux:navlist.group heading="Platform" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>Dashboard</flux:navlist.item>
+                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard') || request()->routeIs('dashboard.*')" wire:navigate>Dashboard</flux:navlist.item>
                 </flux:navlist.group>
 
+                @if(in_array(auth()->user()->role_id, [1, 2]))
                 <flux:navlist.group heading="Administrador" :expanded="request()->routeIs('users.*') || request()->routeIs('catalogo-roles.*')" class="mt-4" expandable>
                     <flux:navlist.item icon="users" :href="route('users.index')" :current="request()->routeIs('users.*')" wire:navigate>Adm. Usuarios</flux:navlist.item>
                     <flux:navlist.item icon="shield-check" :href="route('catalogo-roles.index')" :current="request()->routeIs('catalogo-roles.*')" wire:navigate>Roles</flux:navlist.item>
                 </flux:navlist.group>
+                @endif
 
+                @if(in_array(auth()->user()->role_id, [1, 2, 4]))
                 <flux:navlist.group heading="Reportes" expandable class="mt-4">
                     <flux:navlist.item icon="document-chart-bar" href="#" wire:navigate>
                         Reporte General
                     </flux:navlist.item>
                 </flux:navlist.group>
+                @endif
 
+                @if(in_array(auth()->user()->role_id, [1, 2, 5]))
                 <flux:navlist.group heading="Auditorías" expandable class="mt-4" :expanded="request()->routeIs('inspeccion.tela')">
                     <flux:navlist.item icon="document-text" :href="route('inspeccion.tela')" wire:navigate>
                         Inspección de Tela
                     </flux:navlist.item>
                 </flux:navlist.group>
+                @endif
             </flux:navlist>
             </div>
 

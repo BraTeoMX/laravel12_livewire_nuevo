@@ -15,12 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
         // Registrar middleware como alias para uso en rutas
         $middleware->alias([
             'check.estatus' => CheckEstatus::class,
+            'role.access' => \App\Http\Middleware\RoleAccess::class,
         ]);
 
-        // Opcional: Agregar al grupo web después de Authenticate
-        // Esto asegura que toda ruta autenticada valide el estatus
+        // Agregar al grupo web después de Authenticate y CheckEstatus
+        // Esto asegura que toda ruta autenticada valide el estatus y los roles/accesos
         $middleware->appendToGroup('web', [
             CheckEstatus::class,
+            \App\Http\Middleware\RoleAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

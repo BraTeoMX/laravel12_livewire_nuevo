@@ -30,6 +30,8 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'employee_number' => fake()->unique()->randomNumber(5),
+            'estatus' => true,
+            'role_id' => 1, // Administrador por defecto para pruebas existentes
         ];
     }
 

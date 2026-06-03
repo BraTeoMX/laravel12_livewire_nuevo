@@ -26,6 +26,9 @@ new #[Layout('components.layouts.auth')] class extends Component {
         ]);
 
         $validated['password'] = Hash::make($validated['password']);
+        $validated['employee_number'] = rand(100000, 999999);
+        $validated['role_id'] = 4; // Rol por defecto: Consulta
+        $validated['estatus'] = 1; // Estatus por defecto: Activo
 
         event(new Registered(($user = User::create($validated))));
 

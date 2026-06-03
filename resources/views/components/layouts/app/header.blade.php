@@ -72,12 +72,12 @@
 
             <flux:navlist variant="outline">
                 <flux:navlist.group heading="Platform">
-                    <flux:navlist.item icon="layout-grid" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')" wire:navigate>
+                    <flux:navlist.item icon="layout-grid" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard') || request()->routeIs('dashboard.*')" wire:navigate>
                         Dashboard
                     </flux:navlist.item>
                 </flux:navlist.group>
 
-                @can('manage-users')
+                @if(in_array(auth()->user()->role_id, [1, 2]))
                 <flux:navlist.group heading="Administrador" :expanded="request()->routeIs('users.*') || request()->routeIs('catalogo-roles.*')" expandable>
                     <flux:navlist.item icon="users" href="{{ route('users.index') }}" :current="request()->routeIs('users.*')" wire:navigate>
                         Adm. Usuarios
@@ -86,19 +86,23 @@
                         Roles
                     </flux:navlist.item>
                 </flux:navlist.group>
-                @endcan
+                @endif
 
+                @if(in_array(auth()->user()->role_id, [1, 2, 4]))
                 <flux:navlist.group heading="Reportes" expandable>
                     <flux:navlist.item icon="document-chart-bar" href="#" wire:navigate>
                         Reporte General
                     </flux:navlist.item>
                 </flux:navlist.group>
+                @endif
 
+                @if(in_array(auth()->user()->role_id, [1, 2, 5]))
                 <flux:navlist.group heading="Auditorías" expandable :expanded="request()->routeIs('inspeccion.tela')">
                     <flux:navlist.item icon="document-text" :href="route('inspeccion.tela')" wire:navigate>
                         Inspección de Tela
                     </flux:navlist.item>
                 </flux:navlist.group>
+                @endif
             </flux:navlist>
         </flux:sidebar>
 
