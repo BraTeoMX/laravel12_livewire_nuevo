@@ -3,7 +3,7 @@
     <head>
         @include('partials.head')
         <style>
-            /* Sidebar oscuro: texto claro en items NO activos */
+            /* Sidebar oscuro: texto claro en ítems NO activos */
             #sidebar-nav a:not([aria-current]) {
                 color: rgb(203 213 225); /* slate-300 */
                 transition: color 0.15s ease;
@@ -19,47 +19,33 @@
         </style>
     </head>
     <body class="min-h-screen bg-white">
-        @php
-            $isAuditor = (int) auth()->user()->role_id === 5;
-            $homeRoute = $isAuditor ? route('auditor.dashboard') : route('dashboard');
-        @endphp
-
         <flux:sidebar sticky stashable class="border-r border-slate-700 bg-slate-800">
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
-            <a href="{{ $homeRoute }}" class="mr-5 flex items-center space-x-2" wire:navigate>
+            <a href="{{ route('dashboard') }}" class="mr-5 flex items-center space-x-2" wire:navigate>
                 <x-app-logo class="size-8" href="#"></x-app-logo>
             </a>
 
             <div id="sidebar-nav">
             <flux:navlist variant="outline">
                 <flux:navlist.group heading="Platform" class="grid">
-                    <flux:navlist.item icon="home" :href="$homeRoute" :current="request()->routeIs('dashboard') || request()->routeIs('auditor.dashboard')" wire:navigate>
-                        {{ $isAuditor ? 'Panel Auditor' : 'Dashboard' }}
+                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>Dashboard</flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group heading="Administrador" :expanded="request()->routeIs('users.*') || request()->routeIs('catalogo-roles.*')" class="mt-4" expandable>
+                    <flux:navlist.item icon="users" :href="route('users.index')" :current="request()->routeIs('users.*')" wire:navigate>Adm. Usuarios</flux:navlist.item>
+                    <flux:navlist.item icon="shield-check" :href="route('catalogo-roles.index')" :current="request()->routeIs('catalogo-roles.*')" wire:navigate>Roles</flux:navlist.item>
+                </flux:navlist.group>
+
+                <flux:navlist.group heading="Reportes" expandable class="mt-4">
+                    <flux:navlist.item icon="document-chart-bar" href="#" wire:navigate>
+                        Reporte General
                     </flux:navlist.item>
                 </flux:navlist.group>
 
-                @unless ($isAuditor)
-                    <flux:navlist.group heading="Administrador" :expanded="request()->routeIs('users.*') || request()->routeIs('catalogo-roles.*')" class="mt-4" expandable>
-                        <flux:navlist.item icon="users" :href="route('users.index')" :current="request()->routeIs('users.*')" wire:navigate>Adm. Usuarios</flux:navlist.item>
-                        <flux:navlist.item icon="shield-check" :href="route('catalogo-roles.index')" :current="request()->routeIs('catalogo-roles.*')" wire:navigate>Roles</flux:navlist.item>
-                    </flux:navlist.group>
-
-                    <flux:navlist.group heading="Reportes" expandable class="mt-4">
-                        <flux:navlist.item icon="document-chart-bar" href="#" wire:navigate>
-                            Reporte General
-                        </flux:navlist.item>
-                    </flux:navlist.group>
-                @endunless
-
-                <flux:navlist.group heading="Auditorias" expandable class="mt-4" :expanded="request()->routeIs('auditor.dashboard') || request()->routeIs('inspeccion.tela')">
-                    @if ($isAuditor)
-                        <flux:navlist.item icon="home" :href="route('auditor.dashboard')" :current="request()->routeIs('auditor.dashboard')" wire:navigate>
-                            Panel Auditor
-                        </flux:navlist.item>
-                    @endif
-                    <flux:navlist.item icon="document-text" :href="route('inspeccion.tela')" :current="request()->routeIs('inspeccion.tela')" wire:navigate>
-                        Inspeccion de Tela
+                <flux:navlist.group heading="Auditorías" expandable class="mt-4" :expanded="request()->routeIs('inspeccion.tela')">
+                    <flux:navlist.item icon="document-text" :href="route('inspeccion.tela')" wire:navigate>
+                        Inspección de Tela
                     </flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>

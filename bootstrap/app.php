@@ -4,8 +4,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\CheckEstatus;
-use App\Http\Middleware\EnsureAuditor;
-use App\Http\Middleware\PreventAuditorDashboardAccess;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,8 +15,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // Registrar middleware como alias para uso en rutas
         $middleware->alias([
             'check.estatus' => CheckEstatus::class,
-            'auditor' => EnsureAuditor::class,
-            'prevent.auditor.dashboard' => PreventAuditorDashboardAccess::class,
         ]);
 
         // Opcional: Agregar al grupo web después de Authenticate
