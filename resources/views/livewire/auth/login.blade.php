@@ -52,6 +52,12 @@ new #[Layout('components.layouts.auth')] class extends Component {
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
+        if ((int) Auth::user()->role_id === 5) {
+            $this->redirectRoute('auditor.dashboard', navigate: true);
+
+            return;
+        }
+
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
 

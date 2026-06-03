@@ -6,16 +6,23 @@ use Livewire\Volt\Volt;
 
 Route::get('/', function () {
     if (auth()->check()) {
-        return redirect()->route('dashboard');
+        return (int) auth()->user()->role_id === 5
+            ? redirect()->route('auditor.dashboard')
+            : redirect()->route('dashboard');
     }
+
     return redirect()->route('login');
 })->name('home');
 
 Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'prevent.auditor.dashboard'])
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
+    Route::view('auditorias', 'auditor.dashboard')
+        ->middleware(['verified', 'auditor'])
+        ->name('auditor.dashboard');
+
     Route::redirect('settings', 'settings/profile');
 
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
